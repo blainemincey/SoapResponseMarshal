@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Configures the Camel Context -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+
+<!-- 
+Added streamCache="true" to camelContext to make sure the message is re-readable
+from the http output.  Reads two messages from the file system.  Logs their content.
+Pass SOAP requests to SOAP stock web service.  Log the SOAP response.  Marshal
+the XML to JSON.  Log the JSON result.  Finally, write the result JSON
+to the filesystem.
+ -->	
+<camelContext streamCache="true" xmlns="http://camel.apache.org/schema/spring">
+  <route shutdownRoute="Default">
+    <from uri="file:src/data?noop=true"/>
+    <log message="${body}" loggingLevel="INFO"/>
+    <to uri="cxf://http://www.webservicex.net/stockquote.asmx?wsdlURL=src/main/resources/META-INF/stockquote.wsdl&amp;serviceName={http://www.webserviceX.NET/}StockQuote&amp;portName={http://www.webserviceX.NET/}StockQuoteSoap&amp;dataFormat=MESSAGE"/>
+    <log message="${body}" loggingLevel="INFO"/>
+    <marshal>
+      <xmljson skipNamespaces="true"/>
+    </marshal>
+    <log message="${body}" loggingLevel="INFO"/>
+    <to uri="file:target/jsonresponse?fileName=${file:name.noext}.json"/>
+  </route>
+</camelContext>
+
+</beans>
